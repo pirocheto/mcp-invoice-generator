@@ -1,20 +1,18 @@
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings."""
 
-    port: int = Field(
-        8000,
-        description="The port to use for the MCP server.",
-    )
+    service_name: str = "Invoice Generator Service"
+    env: Literal["development", "production"] = "development"
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_prefix="MCP_",
+        env_prefix="APP_",
     )
 
 

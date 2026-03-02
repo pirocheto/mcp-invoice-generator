@@ -1,9 +1,7 @@
-MCP_PORT ?= 8000
-
 .PHONY: dev
 dev:
 	@echo "Run the MCP server in development mode with auto-reloading."
-	fastmcp run app/main.py --transport http --port $(MCP_PORT) --reload
+	fastmcp run dev.fastmcp.json --reload --skip-env
 
 .PHONY: test
 test:
@@ -19,4 +17,10 @@ build:
 .PHONY: start
 start:
 	@echo "Start the MCP server using Podman. (Prod run)"
-	podman run -p $(MCP_PORT):$(MCP_PORT) -e MCP_PORT=$(MCP_PORT) mcp:latest
+	podman run -p 8000:8000 mcp:latest
+
+.PHONY: run-inspector
+run-inspector:
+	@echo "Run the FastMCP inspector to monitor server performance and logs."
+	bunx @modelcontextprotocol/inspector uv run fastmcp run dev.fastmcp.json --skip-env
+

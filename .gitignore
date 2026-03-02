@@ -11,3 +11,6 @@ wheels/
 
 .pytest_cache/
 .coverage
+outputs/
+
+src/configs/data.toml

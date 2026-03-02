@@ -1,10 +1,8 @@
 """Shared fixtures for the test suite."""
 
 import pytest
-from fastmcp import Client
-
-from app.mcp.config import Settings
 from app.mcp.server import mcp
+from fastmcp import Client
 
 
 @pytest.fixture

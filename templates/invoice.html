@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facture {{ invoice_number }}</title>
+  <style>
+    @page {
+        size: A4;
+        margin: 1.5cm;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      color: #111827;
+      background: #fff;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    .brand {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #3D5A80;
+    }
+
+    .invoice-meta {
+      text-align: right;
+    }
+
+    .invoice-meta .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #4B5563;
+    }
+
+    .invoice-meta .invoice-number {
+      font-size: 22px;
+      font-weight: 700;
+      color: #3D5A80;
+      margin-top: 2px;
+    }
+
+    .invoice-meta .date {
+      margin-top: 4px;
+      color: #374151;
+    }
+
+    /* ── Parties ─────────────────────────────────────────── */
+    .parties {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      gap: 32px;
+    }
+
+    .party {
+      flex: 1;
+      background: #f9f9f9;
+      border-radius: 6px;
+      padding: 20px 24px;
+    }
+
+    .party-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #4B5563;
+      margin-bottom: 10px;
+    }
+
+    .party-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #3D5A80;
+      margin-bottom: 4px;
+    }
+
+    .party p {
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .table-wrap {
+      margin-bottom: 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e0e0e0;
+    }
+
+    thead tr {
+      background: #3D5A80;
+      color: #fff;
+      height: 40px;
+    }
+
+    thead th {
+      padding: 0 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      text-align: left;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    thead th.right { text-align: right; }
+
+    tbody tr {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: 12px 14px;
+      color: #333;
+      line-height: 1.5;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    tbody td:last-child { border-right: none; }
+
+    tbody td.right { text-align: right; }
+
+    tbody tr:hover { background: #fafafa; }
+
+    /* ── Totals ──────────────────────────────────────────── */
+    .totals-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 40px;
+    }
+
+    .totals {
+      width: 300px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #ebebeb;
+      color: #1f2937;
+    }
+
+    .totals-row:last-child {
+      border-bottom: none;
+      font-size: 15px;
+      font-weight: 700;
+      color: #3D5A80;
+      padding-top: 12px;
+    }
+
+    .totals-row .total-label {
+      font-weight: 600;
+    }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid #ebebeb;
+      padding-top: 20px;
+      font-size: 11px;
+      color: #4B5563;
+      line-height: 1.6;
+    }
+
+    .footer strong { color: #1f2937; }
+
+    .badge {
+      display: inline-block;
+      background: #3D5A80;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 8px 4px;
+      border-radius: 3px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <div class="header">
+    <div>
+      <div class="brand">{{ issuer.name }}</div>
+      <p style="color:#374151; margin-top:6px; line-height:1.6;">
+        {{ issuer.address }}<br/>
+        {{ issuer.postal }} {{ issuer.city }}<br/>
+        {{ issuer.email }}<br/>
+        SIRET : {{ issuer.siret }}<br/>
+        N° TVA : {{ issuer.vat_number }}
+      </p>
+    </div>
+    <div class="invoice-meta">
+      <div class="label">Facture</div>
+      <div class="invoice-number">{{ invoice_number }}</div>
+      <div class="date">{{ invoice_date.strftime('%d/%m/%Y') }}</div>
+    </div>
+  </div>
+
+  <!-- ── Parties ─────────────────────────────────────────── -->
+  <div class="parties">
+    <div class="party">
+      <div class="party-title">Émetteur</div>
+      <div class="party-name">{{ issuer.name }}</div>
+      <p>
+        {{ issuer.address }}<br/>
+        {{ issuer.postal }} {{ issuer.city }}<br/>
+        {{ issuer.email }}<br/>
+        SIREN : {{ issuer.siren }}<br/>
+        N° TVA : {{ issuer.vat_number }}
+      </p>
+    </div>
+    <div class="party">
+      <div class="party-title">Client</div>
+      <div class="party-name">{{ client.name }}</div>
+      <p>
+        {{ client.address }}<br/>
+        {{ client.postal }} {{ client.city | title }}<br/>
+        SIREN : {{ client.siren }}<br/>
+        N° TVA : {{ client.vat_number }}
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Line items ──────────────────────────────────────── -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="right">Qté (jours)</th>
+          <th class="right">TJM (€)</th>
+          <th class="right">Total HT (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ service.description }}</td>
+          <td class="right">{{ days }}</td>
+          <td class="right">{{ service.daily_rate | fr_number(0) }}</td>
+          <td class="right">{{ subtotal | fr_number }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Totals ─────────────────────────────────────────── -->
+  <div class="totals-wrap">
+    <div class="totals">
+      <div class="totals-row">
+        <span class="total-label">Sous-total HT</span>
+        <span>{{ subtotal | fr_number }} €</span>
+      </div>
+      <div class="totals-row">
+        <span class="total-label">TVA ({{ tax_amount | int }} %)</span>
+        <span>{{ tax | fr_number }} €</span>
+      </div>
+      <div class="totals-row">
+        <span class="total-label">Total TTC</span>
+        <span>{{ total | fr_number }} €</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <div class="footer">
+    <div class="badge">Conditions de paiement</div>
+    <p>
+      <strong>Échéance :</strong> 30 jours à compter de la date de facturation.<br/>
+      <strong>Virement bancaire :</strong> IBAN {{ issuer.iban }} — SWIFT {{ issuer.bic }}<br/>
+      <strong>Pénalités de retard :</strong> Tout retard de paiement entraîne des pénalités au taux
+      légal en vigueur, ainsi qu'une indemnité forfaitaire de recouvrement de 40 €.
+    </p>
+  </div>
+
+</body>
+</html>

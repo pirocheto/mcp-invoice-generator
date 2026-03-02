@@ -1,0 +1,43 @@
+[defaults]
+issuer = "Jane Doe"
+client = "Acme Corp"
+service = "consulting"
+
+[[issuers]]
+name = "Jane Doe"
+address = "12 rue de la Paix"
+city = "Lyon"
+postal = "69001"
+email = "jane.doe@example.com"
+siren = "123 456 789"
+siret = "123 456 789 00012"
+vat_number = "FR 12 123 456 789"
+iban = "FR76 1234 5678 9012 3456 7890 123"
+bic = "BNPAFRPPXXX"
+tax_rate = 0.2
+
+[[services]]
+name = "consulting"
+daily_rate = 600
+description = "Prestation de services — conseil et accompagnement stratégique"
+
+[[services]]
+name = "development"
+daily_rate = 700
+description = "Prestation de services — développement logiciel"
+
+[[clients]]
+name = "Acme Corp"
+address = "42 avenue des Champs-Élysées"
+city = "Paris"
+postal = "75008"
+siren = "987 654 321"
+vat_number = "FR 98 987 654 321"
+
+[[clients]]
+name = "Globex Inc"
+address = "7 rue du Commerce"
+city = "Bordeaux"
+postal = "33000"
+siren = "111 222 333"
+vat_number = "FR 11 111 222 333"
