@@ -1,0 +1,50 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Testing & Coverage
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Linting & Type checking
+.ruff_cache/
+.mypy_cache/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment & Config
+.env
+.env.*
+
+# Documentation & Build files
+Makefile
+Dockerfile
+.dockerignore
+
+# Logs & Temporary files
+*.log
+*.tmp
+.cache/

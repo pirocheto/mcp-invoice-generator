@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "fastmcp-documentation": {
+      "type": "http",
+      "url": "https://gofastmcp.com/mcp"
+    }
+  }
+}
