@@ -34,11 +34,40 @@
 
 ---
 
-## Installation
+## Local Installation
+
+### Linux
+
+Clone the repository and install it in your MCP servers directory:
 
 ```bash
-uv sync
+git clone https://github.com/pirocheto/mcp-invoice-generator
+mkdir -p ~/.local/share/mcp
+rsync -a --exclude='.git' mcp-invoice-generator/ ~/.local/share/mcp/mcp-invoice-generator
 ```
+
+Point your MCP client (e.g. Claude Desktop) to the installed server:
+
+```json
+{
+  "mcpServers": {
+    "invoice-generator": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/home/<username>/.local/share/mcp-invoice-generator",
+        "--",
+        "fastmcp",
+        "run"
+      ]
+    }
+  }
+}
+```
+
+> Replace `<username>` in the path above with your actual Linux username (e.g. `/home/johndoe/...`). You can get it by running `echo $USER` in a terminal.
 
 ---
 
