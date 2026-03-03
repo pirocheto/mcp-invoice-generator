@@ -16,7 +16,7 @@
 
 - **PDF invoice generation** — HTML template rendered to PDF via [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/)
 - **[MCP server](https://modelcontextprotocol.io/docs/getting-started/intro)** — `generate_invoice` tool accessible by an LLM
-- **TOML configuration** — issuers, clients and services defined in `data.toml`
+- **TOML configuration** — issuers, clients and services defined in `data/billing.toml`
 - **[FastMCP](https://github.com/jlowin/fastmcp)** — modern MCP server framework
 - **[WeasyPrint](https://weasyprint.org/)** — HTML/CSS to PDF rendering
 - **[uv](https://docs.astral.sh/uv/)** — dependency management
@@ -30,63 +30,25 @@
 
 - [uv](https://docs.astral.sh/uv/)
 - [WeasyPrint system dependencies](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html)
-- [Docker](https://docs.docker.com/) / [Podman](https://podman.io/) *(only required to build and run the container image)*
+- [Docker](https://docs.docker.com/) / [Podman](https://podman.io/) _(only required to build and run the container image)_
 
 ---
 
-## Local Installation
+## Setup
 
-### Linux
-
-Clone the repository and install it in your MCP servers directory:
-
-```bash
-git clone https://github.com/pirocheto/mcp-invoice-generator
-mkdir -p ~/.local/share/mcp
-rsync -a --exclude='.git' mcp-invoice-generator/ ~/.local/share/mcp/mcp-invoice-generator
-```
-
-Point your MCP client (e.g. Claude Desktop) to the installed server:
-
-```json
-{
-  "mcpServers": {
-    "invoice-generator": {
-      "type": "stdio",
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/home/<username>/.local/share/mcp-invoice-generator",
-        "--",
-        "fastmcp",
-        "run"
-      ]
-    }
-  }
-}
-```
-
-> Replace `<username>` in the path above with your actual Linux username (e.g. `/home/johndoe/...`). You can get it by running `echo $USER` in a terminal.
-
----
-
-## Configuration
+### 1. Billing data
 
 Copy and fill in the data file:
 
 ```bash
-cp src/configs/data.toml.example src/configs/data.toml
+cp data/billing.toml.example data/billing.toml
 ```
 
-The `src/configs/data.toml` contains:
+This file is the **core data source** for invoice generation. It defines the people, companies, and services that can appear on your invoices. The MCP tools (`get_issuers`, `get_clients`, `get_services`) read directly from this file, and `generate_invoice` uses it to populate the PDF.
+
+You can define **multiple entries** in each section — simply repeat the `[[issuers]]`, `[[services]]`, or `[[clients]]` block.
 
 ```toml
-[defaults]
-issuer = "Jane Doe"
-client = "Acme Corp"
-service = "consulting"
-
 [[issuers]]
 name = "Jane Doe"
 address = "12 rue de la Paix"
@@ -114,7 +76,96 @@ siren = "987 654 321"
 vat_number = "FR 98 987 654 321"
 ```
 
-The `[defaults]` section defines the default values used by the MCP server.
+### 2. Environment variables
+
+The application is configured via environment variables (prefixed with `APP_`) or a `.env` file at the project root.
+
+| Variable           | Default                     | Description                                 |
+| ------------------ | --------------------------- | ------------------------------------------- |
+| `APP_SERVICE_NAME` | `Invoice Generator Service` | Name of the MCP server                      |
+| `APP_ENV`          | `development`               | Environment (`development` or `production`) |
+| `APP_OUTPUT_DIR`   | `outputs`                   | Directory where generated PDFs are saved    |
+| `APP_DATA_FILE`    | `data/billing.toml`         | Path to the billing data TOML file          |
+
+Relative paths are resolved from the project root. Absolute paths are used as-is.
+
+---
+
+## Installation
+
+### Local (stdio)
+
+Clone the repository and install it in your MCP servers directory:
+
+```bash
+git clone https://github.com/pirocheto/mcp-invoice-generator
+mkdir -p ~/.local/share/mcp
+rsync -a --exclude='.git' mcp-invoice-generator/ ~/.local/share/mcp/mcp-invoice-generator
+```
+
+Point your MCP client (e.g. Claude Desktop) to the installed server:
+
+```json
+{
+  "mcpServers": {
+    "invoice-generator": {
+      "type": "stdio",
+      "env": {
+        "APP_DATA_FILE": "./data/billing.toml",
+        "APP_OUTPUT_DIR": "./outputs"
+      },
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/home/<username>/.local/share/mcp-invoice-generator",
+        "--",
+        "fastmcp",
+        "run"
+      ]
+    }
+  }
+}
+```
+
+> Replace `<username>` in the path above with your actual Linux username (e.g. `/home/johndoe/...`). You can get it by running `echo $USER` in a terminal.
+
+### Docker
+
+The project includes a multi-stage Dockerfile optimised for production:
+
+- **Builder stage** — installs dependencies with `uv` using layer caching
+- **Runtime stage** — minimal `python:3.14-slim` image with only the virtual environment copied over
+- Runs as a **non-root user** (`nonroot`, uid 999)
+- Installs the system libraries required by WeasyPrint (`libpango`, `libharfbuzz`, `libfontconfig`)
+- Exposes the MCP server via `uvicorn` on port `8000`
+
+```bash
+# Build the image
+make build
+
+# Run the container (mounts data/ and outputs/, exposes port 8000)
+make start
+```
+
+> `data/billing.toml` must exist before running the container — it is mounted at runtime and is never baked into the image.
+
+---
+
+## MCP Tools
+
+**`generate_invoice`**
+
+| Parameter        | Type  | Default            | Description              |
+| ---------------- | ----- | ------------------ | ------------------------ |
+| `days`           | `int` | _(required)_       | Number of days worked    |
+| `invoice_number` | `str` | _(required)_       | Invoice number           |
+| `client`         | `str` | `defaults.client`  | Client name              |
+| `service`        | `str` | `defaults.service` | Service name             |
+| `issuer`         | `str` | `defaults.issuer`  | Issuer name              |
+| `invoice_date`   | `str` | today              | ISO 8601 date (optional) |
+
+Returns the PDF as a file attachment.
 
 ---
 
@@ -132,48 +183,44 @@ To customise the invoice layout, edit `templates/invoice.html` directly. Any val
 
 **`issuer`**
 
-| Variable          | Type    | Description                        |
-|-------------------|---------|------------------------------------|
-| `issuer.name`     | `str`   | Full name                          |
-| `issuer.address`  | `str`   | Street address                     |
-| `issuer.city`     | `str`   | City                               |
-| `issuer.postal`   | `str`   | Postal code                        |
-| `issuer.email`    | `str`   | Email address                      |
-| `issuer.siren`    | `str`   | SIREN number                       |
-| `issuer.siret`    | `str`   | SIRET number                       |
-| `issuer.vat_number` | `str` | VAT number                         |
-| `issuer.iban`     | `str`   | IBAN                               |
-| `issuer.bic`      | `str`   | BIC / SWIFT code                   |
-| `issuer.tax_rate` | `float` | VAT rate (e.g. `0.2` for 20%)      |
+| Variable            | Type    | Description                   |
+| ------------------- | ------- | ----------------------------- |
+| `issuer.name`       | `str`   | Full name                     |
+| `issuer.address`    | `str`   | Street address                |
+| `issuer.city`       | `str`   | City                          |
+| `issuer.postal`     | `str`   | Postal code                   |
+| `issuer.email`      | `str`   | Email address                 |
+| `issuer.siren`      | `str`   | SIREN number                  |
+| `issuer.siret`      | `str`   | SIRET number                  |
+| `issuer.vat_number` | `str`   | VAT number                    |
+| `issuer.iban`       | `str`   | IBAN                          |
+| `issuer.bic`        | `str`   | BIC / SWIFT code              |
+| `issuer.tax_rate`   | `float` | VAT rate (e.g. `0.2` for 20%) |
 
 **`client`**
 
-| Variable           | Type  | Description    |
-|--------------------|-------|----------------|
-| `client.name`      | `str` | Company name   |
-| `client.address`   | `str` | Street address |
-| `client.city`      | `str` | City           |
-| `client.postal`    | `str` | Postal code    |
-| `client.siren`     | `str` | SIREN number   |
-| `client.vat_number`| `str` | VAT number     |
+| Variable            | Type  | Description    |
+| ------------------- | ----- | -------------- |
+| `client.name`       | `str` | Company name   |
+| `client.address`    | `str` | Street address |
+| `client.city`       | `str` | City           |
+| `client.postal`     | `str` | Postal code    |
+| `client.siren`      | `str` | SIREN number   |
+| `client.vat_number` | `str` | VAT number     |
 
 **`service`**
 
-| Variable              | Type  | Description                  |
-|-----------------------|-------|------------------------------|
-| `service.name`        | `str` | Service identifier           |
-| `service.daily_rate`  | `int` | Daily rate in euros (TJM)    |
-| `service.description` | `str` | Description line on invoice  |
+| Variable              | Type  | Description                 |
+| --------------------- | ----- | --------------------------- |
+| `service.name`        | `str` | Service identifier          |
+| `service.daily_rate`  | `int` | Daily rate in euros (TJM)   |
+| `service.description` | `str` | Description line on invoice |
 
 Additional variables computed at render time: `days`, `invoice_number`, `invoice_date`, `subtotal`, `tax`, `total`.
 
-
-
 ---
 
-## MCP Server
-
-### Development
+## Development
 
 ```bash
 make dev
@@ -181,67 +228,22 @@ make dev
 
 Starts the server with `--reload` via `dev.fastmcp.json`.
 
-### Available MCP tool
+### Make Commands
 
-**`generate_invoice`**
-
-| Parameter        | Type    | Default                | Description                   |
-|------------------|---------|------------------------|-------------------------------|
-| `days`           | `int`   | *(required)*           | Number of days worked         |
-| `invoice_number` | `str`   | *(required)*           | Invoice number                |
-| `client`         | `str`   | `defaults.client`      | Client name                   |
-| `service`        | `str`   | `defaults.service`     | Service name                  |
-| `issuer`         | `str`   | `defaults.issuer`      | Issuer name                   |
-| `invoice_date`   | `str`   | today                  | ISO 8601 date (optional)      |
-
-Returns the PDF as a file attachment.
-
----
-
-## Docker
-
-The project includes a multi-stage Dockerfile optimised for production:
-
-- **Builder stage** — installs dependencies with `uv` using layer caching
-- **Runtime stage** — minimal `python:3.14-slim` image with only the virtual environment copied over
-- Runs as a **non-root user** (`nonroot`, uid 999)
-- Installs the system libraries required by WeasyPrint (`libpango`, `libharfbuzz`, `libfontconfig`)
-- Exposes the MCP server via `uvicorn` on port `8000`
-
-### Build & run
-
-```bash
-# Build the image
-make build
-
-# Run the container (mounts data.toml and exposes port 8000)
-make start
-```
-
-> `src/configs/data.toml` must exist before running the container — it is mounted at runtime and is never baked into the image.
-
----
-
-## Make Commands
-
-| Command               | Description                                       |
-|-----------------------|---------------------------------------------------|
-| `make dev`            | Start server in development mode with auto-reload |
-| `make test`           | Run tests with coverage report                    |
-| `make build`          | Build the Docker image (`podman build`)           |
-| `make start`          | Run the container in production (`podman run`)    |
-| `make run-inspector`  | Launch the MCP inspector                          |
+| Command              | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `make dev`           | Start server in development mode with auto-reload |
+| `make test`          | Run tests with coverage report                    |
+| `make build`         | Build the Docker image                            |
+| `make start`         | Run the container in production                   |
+| `make run-inspector` | Launch the MCP inspector                          |
 
 ---
 
 ## TODO
 
-- [ ] **Config file via env var** — allow specifying the path to `data.toml` through an environment variable (e.g. `APP_CONFIG_FILE=/path/to/data.toml`) instead of relying on the hardcoded default
 - [ ] **Authentication** — add an auth layer to the MCP server (API key, OAuth, or bearer token) before exposing it publicly
-- [ ] **Tests** — improve test coverage (invoice generation, template rendering, config loading)
-- [ ] **Claude configuration** — add documentation on how to configure Claude Desktop (or other MCP clients) to connect to the server
-- [ ] **Demo video** — record a short demo showing the MCP tool in action
-- [ ] **Data validator** — add a validator when loading `data.toml` to catch missing or malformed fields early (issuers, clients, services) and surface clear error messages
+- [ ] **Remote storage** — add HTTP remote storage for PDF output
 
 ---
 

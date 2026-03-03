@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     service_name: str = "Invoice Generator Service"
     env: Literal["development", "production"] = "development"
+    output_dir: str = "outputs"
+    data_file: str = "data/billing.toml"
 
     model_config = SettingsConfigDict(
         env_file=".env",

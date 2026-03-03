@@ -2,7 +2,7 @@
 # Builder stage
 # --------------------
 # Install uv
-ARG PYTHON_VERSION=3.14
+ARG PYTHON_VERSION=3.13
 FROM python:${PYTHON_VERSION}-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # --------------------
 # Runtime stage
 # --------------------
-ARG PYTHON_VERSION=3.14
+ARG PYTHON_VERSION=3.13
 FROM python:${PYTHON_VERSION}-slim
 
 # Install necessary system dependencies for WeasyPrint
@@ -49,7 +49,9 @@ COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH" \
     FASTMCP_STATELESS_HTTP=true \
-    APP_ENV=production 
+    APP_ENV=production \
+    APP_OUTPUT_DIR=/app/outputs \
+    APP_DATA_FILE=/app/data/billing.toml
 
 USER nonroot
 

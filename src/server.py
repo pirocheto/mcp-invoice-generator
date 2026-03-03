@@ -4,35 +4,18 @@ from io import BytesIO
 from pathlib import Path
 
 from babel.numbers import format_decimal
-from dynaconf import Dynaconf
 from fastmcp import FastMCP
-from fastmcp.utilities.types import File
+from fastmcp.dependencies import Depends
 from jinja2 import Environment, FileSystemLoader
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from weasyprint import HTML
 
 from src.config import get_settings
-from src.schemas import ClientData, DataModel, IssuerData, ServiceData
+from src.data import get_data
+from src.schemas import ClientData, IssuerData, ServiceData
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-# TODO: allow providing the config file path via an environment variable
-# (e.g. APP_CONFIG_FILE=/path/to/data.toml) instead of hardcoding it
-
-_raw_data = Dynaconf(
-    root_path=str(Path(__file__).parent),
-    settings_files=["configs/data.toml"],
-)
-
-
-data = DataModel.model_validate(_raw_data.as_dict())
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+settings = get_settings()
 
 
 def _html2pdf(html: str) -> bytes:
@@ -50,11 +33,7 @@ def _fr_number(value: float, decimals: int = 2) -> str:
 _jinja_env = Environment(loader=FileSystemLoader("templates"))
 _jinja_env.filters["fr_number"] = _fr_number
 
-# ---------------------------------------------------------------------------
-# MCP server
-# ---------------------------------------------------------------------------
 
-settings = get_settings()
 mcp = FastMCP(
     name=settings.service_name,
     version="0.1.0",
@@ -72,27 +51,27 @@ Features:
 
 
 @mcp.tool
-def get_issuers() -> list[dict]:
+def get_issuers(data: dict = Depends(get_data)) -> list[dict]:
     """Get the list of available invoice issuers."""
-    return [issuer.model_dump() for issuer in data.issuers]
+    return data["issuers"]
 
 
 @mcp.tool
-def get_services() -> list[dict]:
+def get_services(data: dict = Depends(get_data)) -> list[dict]:
     """Get the list of available services."""
-    return [service.model_dump() for service in data.services]
+    return data["services"]
 
 
 @mcp.tool
-def get_clients() -> list[dict]:
+def get_clients(data: dict = Depends(get_data)) -> list[dict]:
     """Get the list of available clients."""
-    return [client.model_dump() for client in data.clients]
+    return data["clients"]
 
 
 @mcp.tool
-def get_templates() -> list[str]:
+def get_templates(data: dict = Depends(get_data)) -> list[str]:
     """Get the list of available invoice templates."""
-    return [f.stem for f in Path("templates").glob("*.html")]
+    return data["templates"]
 
 
 @mcp.tool
@@ -104,8 +83,10 @@ def generate_invoice(
     issuer: IssuerData,
     invoice_date: datetime = field(default_factory=datetime.now),
     template_name: str = "default",
-) -> File:
-    """Generate an invoice for a client in PDF format."""
+) -> dict:
+    """Generate an invoice for a client in PDF format.
+    The invoice is saved to the user's Downloads folder and the path is returned.
+    """
 
     subtotal = days * service.daily_rate
     tax = subtotal * issuer.tax_rate
@@ -124,8 +105,19 @@ def generate_invoice(
         service=service,
     )
 
-    pdf_bytes: bytes = _html2pdf(html)
-    return File(data=pdf_bytes, format="pdf", name=f"invoice_{invoice_number}")
+    pdf_bytes = _html2pdf(html)
+
+    output_dir = Path(settings.output_dir).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"invoice_{invoice_number}.pdf"
+    output_path.write_bytes(pdf_bytes)
+
+    return {
+        "message": f"Invoice generated successfully and saved to {output_path}",
+        "path": str(output_path),
+        "format": "pdf",
+        "name": f"invoice_{invoice_number}.pdf",
+    }
 
 
 @mcp.custom_route("/health", methods=["GET"])

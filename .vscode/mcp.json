@@ -5,6 +5,10 @@
       "url": "https://gofastmcp.com/mcp"
     },
     "invoice-generator": {
+      "env": {
+        "APP_DATA_FILE": "./data/billing.toml",
+        "APP_OUTPUT_DIR": "./outputs"
+      },
       "command": "uv",
       "args": [
         "run", "--directory", "~/projects/mcp-invoice-generator", "--", "fastmcp", "run"
