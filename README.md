@@ -36,9 +36,16 @@ This server is primarily designed for **local use via stdio**. It generates PDF 
 
 ---
 
-## Setup
+## Getting Started
 
-### 1. Billing data
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/pirocheto/mcp-invoice-generator
+cd mcp-invoice-generator
+```
+
+### 2. Billing data
 
 Copy and fill in the data file:
 
@@ -78,7 +85,7 @@ siren = "987 654 321"
 vat_number = "FR 98 987 654 321"
 ```
 
-### 2. Environment variables
+### 3. Environment variables
 
 The application is configured via environment variables (prefixed with `APP_`) or a `.env` file at the project root.
 
@@ -97,12 +104,11 @@ Relative paths are resolved from the project root. Absolute paths are used as-is
 
 ### Local (stdio)
 
-Clone the repository and install it in your MCP servers directory:
+Install the project in your MCP servers directory:
 
 ```bash
-git clone https://github.com/pirocheto/mcp-invoice-generator
 mkdir -p ~/.local/share/mcp
-rsync -a --exclude='.git' mcp-invoice-generator/ ~/.local/share/mcp/mcp-invoice-generator
+rsync -a --exclude='.git' . ~/.local/share/mcp/mcp-invoice-generator
 ```
 
 Point your MCP client (e.g. Claude Desktop) to the installed server:
