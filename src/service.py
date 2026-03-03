@@ -8,6 +8,8 @@ from dynaconf import Dynaconf
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 
+# TODO: allow providing the config file path via an environment variable
+# (e.g. APP_CONFIG_FILE=/path/to/data.toml) instead of hardcoding it
 _settings = Dynaconf(
     root_path=str(Path(__file__).parent),
     settings_files=["configs/data.toml"],

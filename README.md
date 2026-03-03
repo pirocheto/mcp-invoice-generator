@@ -207,9 +207,12 @@ make start
 
 ## TODO
 
+- [ ] **Config file via env var** — allow specifying the path to `data.toml` through an environment variable (e.g. `APP_CONFIG_FILE=/path/to/data.toml`) instead of relying on the hardcoded default
 - [ ] **Authentication** — add an auth layer to the MCP server (API key, OAuth, or bearer token) before exposing it publicly
 - [ ] **Tests** — improve test coverage (invoice generation, template rendering, config loading)
 - [ ] **Claude configuration** — add documentation on how to configure Claude Desktop (or other MCP clients) to connect to the server
+- [ ] **Demo video** — record a short demo showing the MCP tool in action
+- [ ] **Data validator** — add a validator when loading `data.toml` to catch missing or malformed fields early (issuers, clients, services) and surface clear error messages
 
 ---
 

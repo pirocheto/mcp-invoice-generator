@@ -24,3 +24,4 @@ run-inspector:
 	@echo "Run the FastMCP inspector to monitor server performance and logs."
 	bunx @modelcontextprotocol/inspector uv run fastmcp run dev.fastmcp.json --skip-env
 
+

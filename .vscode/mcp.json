@@ -4,5 +4,11 @@
       "type": "http",
       "url": "https://gofastmcp.com/mcp"
     },
+    "invoice-generator": {
+      "command": "uv",
+      "args": [
+        "run", "--directory", "~/projects/mcp-invoice-generator", "--", "fastmcp", "run"
+      ]
+    }
   }
 }
