@@ -251,13 +251,6 @@ Starts the server with `--reload` via `dev.fastmcp.json`.
 
 ---
 
-## TODO
-
-- [ ] **Authentication** — add an auth layer to the MCP server (API key, OAuth, or bearer token) before exposing it publicly
-- [ ] **Remote storage** — add HTTP remote storage for PDF output
-
----
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
