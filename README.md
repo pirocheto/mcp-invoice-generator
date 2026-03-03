@@ -10,6 +10,8 @@
 
 </div>
 
+This server is primarily designed for **local use via stdio**. It generates PDF invoices directly on your machine, saving them to a configurable output directory. Billing data (issuers, clients, services) is loaded from a local TOML file, making it easy to manage without any external service or database.
+
 ---
 
 ## Features
@@ -154,18 +156,27 @@ make start
 
 ## MCP Tools
 
+**`get_issuers`** — Returns the list of available invoice issuers from `billing.toml`.
+
+**`get_services`** — Returns the list of available services and their daily rates.
+
+**`get_clients`** — Returns the list of available clients.
+
+**`get_templates`** — Returns the list of available invoice templates.
+
 **`generate_invoice`**
 
-| Parameter        | Type  | Default            | Description              |
-| ---------------- | ----- | ------------------ | ------------------------ |
-| `days`           | `int` | _(required)_       | Number of days worked    |
-| `invoice_number` | `str` | _(required)_       | Invoice number           |
-| `client`         | `str` | `defaults.client`  | Client name              |
-| `service`        | `str` | `defaults.service` | Service name             |
-| `issuer`         | `str` | `defaults.issuer`  | Issuer name              |
-| `invoice_date`   | `str` | today              | ISO 8601 date (optional) |
+| Parameter        | Type          | Default      | Description                   |
+| ---------------- | ------------- | ------------ | ----------------------------- |
+| `days`           | `int`         | _(required)_ | Number of days worked         |
+| `invoice_number` | `str`         | _(required)_ | Invoice number                |
+| `client`         | `ClientData`  | _(required)_ | Client details                |
+| `service`        | `ServiceData` | _(required)_ | Service details               |
+| `issuer`         | `IssuerData`  | _(required)_ | Issuer details                |
+| `invoice_date`   | `datetime`    | today        | Invoice date (ISO 8601)       |
+| `template_name`  | `str`         | `default`    | Template to use for rendering |
 
-Returns the PDF as a file attachment.
+Returns the path to the generated PDF file.
 
 ---
 
