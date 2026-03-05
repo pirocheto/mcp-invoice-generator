@@ -6,11 +6,12 @@
 
 ![Python](https://img.shields.io/badge/python-3.13-blue.svg?style=for-the-badge&logo=python&logoColor=white)
 ![FastMCP](https://img.shields.io/badge/FastMCP-3.0.1-blue.svg?style=for-the-badge)
+![Typst](https://img.shields.io/badge/Typst-239DAD.svg?style=for-the-badge&logo=typst&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)
 
 </div>
 
-This server is primarily designed for **local use via stdio**. It generates PDF invoices directly on your machine, saving them to a configurable output directory. Billing data (issuers, clients, services) is loaded from a local TOML file, making it easy to manage without any external service or database.
+This server is primarily designed for **local use via stdio**. It generates PDF invoices directly on your machine using **[Typst](https://typst.app/)** — a modern, fast typesetting system that replaces traditional HTML/CSS-to-PDF pipelines. Templates are clean, readable `.typ` files compiled to pixel-perfect PDFs in milliseconds. Billing data (issuers, clients, services) is loaded from a local TOML file, making it easy to manage without any external service or database.
 
 ---
 
@@ -89,13 +90,13 @@ vat_number = "FR 98 987 654 321"
 
 The application is configured via environment variables (prefixed with `APP_`) or a `.env` file at the project root.
 
-| Variable             | Default                     | Description                                 |
-| -------------------- | --------------------------- | ------------------------------------------- |
-| `APP_SERVICE_NAME`   | `Invoice Generator Service` | Name of the MCP server                      |
-| `APP_ENV`            | `development`               | Environment (`development` or `production`) |
-| `APP_OUTPUT_DIR`     | `outputs`                   | Directory where generated PDFs are saved    |
-| `APP_TEMPLATE_DIR`   | `templates`                 | Directory containing Typst invoice templates|
-| `APP_DATA_FILE`      | `data/billing.toml`         | Path to the billing data TOML file          |
+| Variable           | Default                     | Description                                  |
+| ------------------ | --------------------------- | -------------------------------------------- |
+| `APP_SERVICE_NAME` | `Invoice Generator Service` | Name of the MCP server                       |
+| `APP_ENV`          | `development`               | Environment (`development` or `production`)  |
+| `APP_OUTPUT_DIR`   | `outputs`                   | Directory where generated PDFs are saved     |
+| `APP_TEMPLATE_DIR` | `templates`                 | Directory containing Typst invoice templates |
+| `APP_DATA_FILE`    | `data/billing.toml`         | Path to the billing data TOML file           |
 
 Relative paths are resolved from the project root. Absolute paths are used as-is.
 
@@ -105,14 +106,7 @@ Relative paths are resolved from the project root. Absolute paths are used as-is
 
 ### Local (stdio)
 
-Install the project in your MCP servers directory:
-
-```bash
-mkdir -p ~/.local/share/mcp
-rsync -a --exclude='.git' . ~/.local/share/mcp/mcp-invoice-generator
-```
-
-Point your MCP client (e.g. Claude Desktop) to the installed server:
+Clone the repository and point your MCP client (e.g. Claude Desktop, Github Copilot, OpenCode, etc) to it:
 
 ```json
 {
@@ -121,13 +115,14 @@ Point your MCP client (e.g. Claude Desktop) to the installed server:
       "type": "stdio",
       "env": {
         "APP_DATA_FILE": "./data/billing.toml",
-        "APP_OUTPUT_DIR": "./outputs"
+        "APP_OUTPUT_DIR": "./outputs",
+        "APP_TEMPLATE_DIR": "./templates"
       },
       "command": "uv",
       "args": [
         "run",
         "--directory",
-        "/home/<username>/.local/share/mcp-invoice-generator",
+        "/path/to/mcp-invoice-generator",
         "--",
         "fastmcp",
         "run"
@@ -137,7 +132,7 @@ Point your MCP client (e.g. Claude Desktop) to the installed server:
 }
 ```
 
-> Replace `<username>` in the path above with your actual Linux username (e.g. `/home/johndoe/...`). You can get it by running `echo $USER` in a terminal.
+> Replace `/path/to/mcp-invoice-generator` with the absolute path where you cloned the repository.
 
 ### Docker
 
