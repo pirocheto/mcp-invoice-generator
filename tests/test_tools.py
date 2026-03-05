@@ -6,51 +6,19 @@ from fastmcp import Client
 from mcp.types import TextContent
 
 
-async def test_get_issuers(mcp_client: Client):
-    """get_issuers should return a non-empty list of issuers."""
-    result = await mcp_client.call_tool("get_issuers", {})
+async def test_get_default_values(mcp_client: Client):
+    """get_default_values should return a dict with ISSUERS, SERVICES, and CLIENTS."""
+    result = await mcp_client.call_tool("get_default_values", {})
     assert isinstance(result.content[0], TextContent)
 
-    issuers = json.loads(result.content[0].text)
-    assert isinstance(issuers, list)
-    assert len(issuers) > 0
-    assert "name" in issuers[0]
-    assert "siren" in issuers[0]
-
-
-async def test_get_services(mcp_client: Client):
-    """get_services should return a non-empty list of services."""
-    result = await mcp_client.call_tool("get_services", {})
-
-    assert isinstance(result.content[0], TextContent)
-    services = json.loads(result.content[0].text)
-
-    assert isinstance(services, list)
-    assert len(services) > 0
-    assert "name" in services[0]
-    assert "daily_rate" in services[0]
-
-
-async def test_get_clients(mcp_client: Client):
-    """get_clients should return a non-empty list of clients."""
-    result = await mcp_client.call_tool("get_clients", {})
-    assert isinstance(result.content[0], TextContent)
-
-    clients = json.loads(result.content[0].text)
-    assert isinstance(clients, list)
-    assert len(clients) > 0
-    assert "name" in clients[0]
-    assert "address" in clients[0]
-
-
-async def test_get_templates(mcp_client: Client):
-    """get_templates should return at least the default template."""
-    result = await mcp_client.call_tool("get_templates", {})
-    assert isinstance(result.content[0], TextContent)
-
-    templates = json.loads(result.content[0].text)
-    assert isinstance(templates, list)
-    assert "default" in templates
+    data = json.loads(result.content[0].text)
+    assert isinstance(data, dict)
+    assert "ISSUERS" in data
+    assert "SERVICES" in data
+    assert "CLIENTS" in data
+    assert len(data["ISSUERS"]) > 0
+    assert len(data["SERVICES"]) > 0
+    assert len(data["CLIENTS"]) > 0
 
 
 async def test_generate_invoice(mcp_client: Client, tmp_path):
@@ -62,34 +30,30 @@ async def test_generate_invoice(mcp_client: Client, tmp_path):
     result = await mcp_client.call_tool(
         "generate_invoice",
         {
-            "days": 3,
-            "invoice_number": "TEST-001",
-            "client": {
-                "name": "Acme Corp",
-                "address": "42 avenue des Champs-Élysées",
-                "city": "Paris",
-                "postal": "75008",
-                "siren": "987 654 321",
-                "vat_number": "FR 98 987 654 321",
-            },
-            "service": {
-                "name": "consulting",
-                "daily_rate": 600,
-                "description": "Prestation de services",
-            },
-            "issuer": {
-                "name": "Jane Doe",
-                "address": "12 rue de la Paix",
-                "city": "Lyon",
-                "postal": "69001",
-                "email": "jane@example.com",
-                "siren": "123 456 789",
-                "siret": "123 456 789 00012",
-                "vat_number": "FR 12 123 456 789",
-                "iban": "FR76 1234 5678 9012 3456 7890 123",
-                "bic": "BNPAFRPPXXX",
-                "tax_rate": 0.2,
-            },
+            "data": {
+                "invoice_number": "TEST-001",
+                "invoice_date": "2026-03-05",
+                "issuer_name": "Jane Doe",
+                "issuer_address": "12 rue de la Paix",
+                "issuer_city": "Lyon",
+                "issuer_postal": "69001",
+                "issuer_email": "jane@example.com",
+                "issuer_siren": "123 456 789",
+                "issuer_siret": "123 456 789 00012",
+                "issuer_vat_number": "FR 12 123 456 789",
+                "issuer_iban": "FR76 1234 5678 9012 3456 7890 123",
+                "issuer_bic": "BNPAFRPPXXX",
+                "issuer_tax_rate": 0.2,
+                "service_daily_rate": 600,
+                "service_description": "Prestation de services",
+                "service_days": 3,
+                "client_name": "Acme Corp",
+                "client_address": "42 avenue des Champs-Élysées",
+                "client_city": "Paris",
+                "client_postal": "75008",
+                "client_siren": "987 654 321",
+                "client_vat_number": "FR 98 987 654 321",
+            }
         },
     )
     assert isinstance(result.content[0], TextContent)

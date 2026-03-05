@@ -16,13 +16,14 @@ This server is primarily designed for **local use via stdio**. It generates PDF 
 
 ## Features
 
-- **PDF invoice generation** — HTML template rendered to PDF via [WeasyPrint](https://doc.courtbouillon.org/weasyprint/stable/)
-- **[MCP server](https://modelcontextprotocol.io/docs/getting-started/intro)** — `generate_invoice` tool accessible by an LLM
+- **PDF invoice generation** — [Typst](https://typst.app/) template compiled to PDF
+- **[MCP server](https://modelcontextprotocol.io/docs/getting-started/intro)** — `generate_invoice` and `get_default_values` tools accessible by an LLM
 - **TOML configuration** — issuers, clients and services defined in `data/billing.toml`
 - **[FastMCP](https://github.com/jlowin/fastmcp)** — modern MCP server framework
-- **[WeasyPrint](https://weasyprint.org/)** — HTML/CSS to PDF rendering
+- **[Typst](https://typst.app/)** — typesetting system for PDF rendering
+- **[pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)** — application settings management
+- **[dynaconf](https://www.dynaconf.com/)** — TOML billing data loading
 - **[uv](https://docs.astral.sh/uv/)** — dependency management
-- **[dynaconf](https://www.dynaconf.com/)** — TOML configuration loading
 - **[ruff](https://docs.astral.sh/ruff/)** — linter & formatter
 - **Dockerfile** — multi-stage build ready for production
 
@@ -31,7 +32,6 @@ This server is primarily designed for **local use via stdio**. It generates PDF 
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/)
-- [WeasyPrint system dependencies](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html)
 - [Docker](https://docs.docker.com/) / [Podman](https://podman.io/) _(only required to build and run the container image)_
 
 ---
@@ -53,7 +53,7 @@ Copy and fill in the data file:
 cp data/billing.toml.example data/billing.toml
 ```
 
-This file is the **core data source** for invoice generation. It defines the people, companies, and services that can appear on your invoices. The MCP tools (`get_issuers`, `get_clients`, `get_services`) read directly from this file, and `generate_invoice` uses it to populate the PDF.
+This file is the **core data source** for invoice generation. It defines the people, companies, and services that can appear on your invoices. The `get_default_values` tool reads directly from this file, and `generate_invoice` uses the provided data to populate the PDF.
 
 You can define **multiple entries** in each section — simply repeat the `[[issuers]]`, `[[services]]`, or `[[clients]]` block.
 
@@ -89,12 +89,13 @@ vat_number = "FR 98 987 654 321"
 
 The application is configured via environment variables (prefixed with `APP_`) or a `.env` file at the project root.
 
-| Variable           | Default                     | Description                                 |
-| ------------------ | --------------------------- | ------------------------------------------- |
-| `APP_SERVICE_NAME` | `Invoice Generator Service` | Name of the MCP server                      |
-| `APP_ENV`          | `development`               | Environment (`development` or `production`) |
-| `APP_OUTPUT_DIR`   | `outputs`                   | Directory where generated PDFs are saved    |
-| `APP_DATA_FILE`    | `data/billing.toml`         | Path to the billing data TOML file          |
+| Variable             | Default                     | Description                                 |
+| -------------------- | --------------------------- | ------------------------------------------- |
+| `APP_SERVICE_NAME`   | `Invoice Generator Service` | Name of the MCP server                      |
+| `APP_ENV`            | `development`               | Environment (`development` or `production`) |
+| `APP_OUTPUT_DIR`     | `outputs`                   | Directory where generated PDFs are saved    |
+| `APP_TEMPLATE_DIR`   | `templates`                 | Directory containing Typst invoice templates|
+| `APP_DATA_FILE`      | `data/billing.toml`         | Path to the billing data TOML file          |
 
 Relative paths are resolved from the project root. Absolute paths are used as-is.
 
@@ -143,9 +144,9 @@ Point your MCP client (e.g. Claude Desktop) to the installed server:
 The project includes a multi-stage Dockerfile optimised for production:
 
 - **Builder stage** — installs dependencies with `uv` using layer caching
-- **Runtime stage** — minimal `python:3.14-slim` image with only the virtual environment copied over
+- **Runtime stage** — minimal `python:3.13-slim` image with only the virtual environment copied over
 - Runs as a **non-root user** (`nonroot`, uid 999)
-- Installs the system libraries required by WeasyPrint (`libpango`, `libharfbuzz`, `libfontconfig`)
+- Installs system font libraries (`libpango`, `libharfbuzz`, `libfontconfig`)
 - Exposes the MCP server via `uvicorn` on port `8000`
 
 ```bash
@@ -162,25 +163,34 @@ make start
 
 ## MCP Tools
 
-**`get_issuers`** — Returns the list of available invoice issuers from `billing.toml`.
+**`get_default_values`** — Returns all default billing data from `billing.toml`, including available issuers, services, and clients.
 
-**`get_services`** — Returns the list of available services and their daily rates.
+**`generate_invoice`** — Generates a PDF invoice from flat input fields.
 
-**`get_clients`** — Returns the list of available clients.
-
-**`get_templates`** — Returns the list of available invoice templates.
-
-**`generate_invoice`**
-
-| Parameter        | Type          | Default      | Description                   |
-| ---------------- | ------------- | ------------ | ----------------------------- |
-| `days`           | `int`         | _(required)_ | Number of days worked         |
-| `invoice_number` | `str`         | _(required)_ | Invoice number                |
-| `client`         | `ClientData`  | _(required)_ | Client details                |
-| `service`        | `ServiceData` | _(required)_ | Service details               |
-| `issuer`         | `IssuerData`  | _(required)_ | Issuer details                |
-| `invoice_date`   | `datetime`    | today        | Invoice date (ISO 8601)       |
-| `template_name`  | `str`         | `default`    | Template to use for rendering |
+| Parameter             | Type    | Default | Description                         |
+| --------------------- | ------- | ------- | ----------------------------------- |
+| `invoice_number`      | `str`   | —       | Invoice number                      |
+| `invoice_date`        | `date`  | today   | Invoice date (ISO 8601)             |
+| `issuer_name`         | `str`   | —       | Issuer full name                    |
+| `issuer_address`      | `str`   | —       | Issuer street address               |
+| `issuer_city`         | `str`   | —       | Issuer city                         |
+| `issuer_postal`       | `str`   | —       | Issuer postal code                  |
+| `issuer_email`        | `str`   | —       | Issuer email address                |
+| `issuer_siren`        | `str`   | —       | Issuer SIREN number                 |
+| `issuer_siret`        | `str`   | —       | Issuer SIRET number                 |
+| `issuer_vat_number`   | `str`   | —       | Issuer VAT number                   |
+| `issuer_iban`         | `str`   | —       | Issuer IBAN                         |
+| `issuer_bic`          | `str`   | —       | Issuer BIC / SWIFT code             |
+| `issuer_tax_rate`     | `float` | —       | VAT rate (e.g. `0.2` for 20%)       |
+| `service_daily_rate`  | `int`   | —       | Daily rate in euros (TJM)           |
+| `service_description` | `str`   | —       | Service description line on invoice |
+| `service_days`        | `int`   | —       | Number of days worked               |
+| `client_name`         | `str`   | —       | Client company name                 |
+| `client_address`      | `str`   | —       | Client street address               |
+| `client_city`         | `str`   | —       | Client city                         |
+| `client_postal`       | `str`   | —       | Client postal code                  |
+| `client_siren`        | `str`   | —       | Client SIREN number                 |
+| `client_vat_number`   | `str`   | —       | Client VAT number                   |
 
 Returns the path to the generated PDF file.
 
@@ -188,52 +198,59 @@ Returns the path to the generated PDF file.
 
 ## Template
 
-The invoice template is located in `templates/invoice.html` and is written in **HTML + [Jinja2](https://jinja.palletsprojects.com/)**. It receives the `issuer`, `client`, and `service` objects as context variables and is then converted to a PDF by **[WeasyPrint](https://weasyprint.org/)**.
+The invoice template is located in `templates/invoice.typ` and is written in **[Typst](https://typst.app/)**, a modern typesetting language. It receives all invoice fields as named parameters and is compiled to PDF by the `typst` Python package.
 
-The included template is designed for **French freelancers**: it is based on a daily rate (TJM), computes subtotal, VAT, and total, and formats all monetary values using French locale conventions (e.g. `11 000,00 €`) via [Babel](https://babel.pocoo.org/).
+The included template is designed for **French freelancers**: it is based on a daily rate (TJM), computes subtotal, VAT, and total, and formats all monetary values using French conventions (e.g. `3 000,00 €`).
 
-To customise the invoice layout, edit `templates/invoice.html` directly. Any valid HTML/CSS supported by WeasyPrint can be used.
+To customise the invoice layout, edit `templates/invoice.typ` directly.
 
 → [View example invoice](examples/invoice.pdf)
 
-### Template context
+### Template parameters
 
-**`issuer`**
+All parameters are passed as flat named arguments to the Typst template function.
 
-| Variable            | Type    | Description                   |
+**Issuer**
+
+| Parameter           | Type    | Description                   |
 | ------------------- | ------- | ----------------------------- |
-| `issuer.name`       | `str`   | Full name                     |
-| `issuer.address`    | `str`   | Street address                |
-| `issuer.city`       | `str`   | City                          |
-| `issuer.postal`     | `str`   | Postal code                   |
-| `issuer.email`      | `str`   | Email address                 |
-| `issuer.siren`      | `str`   | SIREN number                  |
-| `issuer.siret`      | `str`   | SIRET number                  |
-| `issuer.vat_number` | `str`   | VAT number                    |
-| `issuer.iban`       | `str`   | IBAN                          |
-| `issuer.bic`        | `str`   | BIC / SWIFT code              |
-| `issuer.tax_rate`   | `float` | VAT rate (e.g. `0.2` for 20%) |
+| `issuer_name`       | `str`   | Full name                     |
+| `issuer_address`    | `str`   | Street address                |
+| `issuer_city`       | `str`   | City                          |
+| `issuer_postal`     | `str`   | Postal code                   |
+| `issuer_email`      | `str`   | Email address                 |
+| `issuer_siren`      | `str`   | SIREN number                  |
+| `issuer_siret`      | `str`   | SIRET number                  |
+| `issuer_vat_number` | `str`   | VAT number                    |
+| `issuer_iban`       | `str`   | IBAN                          |
+| `issuer_bic`        | `str`   | BIC / SWIFT code              |
+| `issuer_tax_rate`   | `float` | VAT rate (e.g. `0.2` for 20%) |
 
-**`client`**
+**Client**
 
-| Variable            | Type  | Description    |
+| Parameter           | Type  | Description    |
 | ------------------- | ----- | -------------- |
-| `client.name`       | `str` | Company name   |
-| `client.address`    | `str` | Street address |
-| `client.city`       | `str` | City           |
-| `client.postal`     | `str` | Postal code    |
-| `client.siren`      | `str` | SIREN number   |
-| `client.vat_number` | `str` | VAT number     |
+| `client_name`       | `str` | Company name   |
+| `client_address`    | `str` | Street address |
+| `client_city`       | `str` | City           |
+| `client_postal`     | `str` | Postal code    |
+| `client_siren`      | `str` | SIREN number   |
+| `client_vat_number` | `str` | VAT number     |
 
-**`service`**
+**Service**
 
-| Variable              | Type  | Description                 |
+| Parameter             | Type  | Description                 |
 | --------------------- | ----- | --------------------------- |
-| `service.name`        | `str` | Service identifier          |
-| `service.daily_rate`  | `int` | Daily rate in euros (TJM)   |
-| `service.description` | `str` | Description line on invoice |
+| `service_daily_rate`  | `int` | Daily rate in euros (TJM)   |
+| `service_description` | `str` | Description line on invoice |
+| `service_days`        | `int` | Number of days worked       |
 
-Additional variables computed at render time: `days`, `invoice_number`, `invoice_date`, `subtotal`, `tax`, `total`.
+**Invoice**
+
+| Parameter        | Type  | Description               |
+| ---------------- | ----- | ------------------------- |
+| `invoice_number` | `str` | Invoice number            |
+| `invoice_date`   | `str` | Invoice date (DD/MM/YYYY) |
 
 ---
 

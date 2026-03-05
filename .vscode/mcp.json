@@ -7,7 +7,8 @@
     "invoice-generator": {
       "env": {
         "APP_DATA_FILE": "./data/billing.toml",
-        "APP_OUTPUT_DIR": "./outputs"
+        "APP_OUTPUT_DIR": "./outputs",
+        "APP_TEMPLATE_DIR": "./templates"
       },
       "command": "uv",
       "args": [

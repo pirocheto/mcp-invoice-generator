@@ -20,6 +20,7 @@ start:
 	docker run -p 8000:8000 \
 		-v $(PWD)/data:/app/data \
 		-v $(PWD)/outputs:/app/outputs \
+		-v $(PWD)/templates:/app/templates \
 		mcp:latest
 
 .PHONY: run-inspector

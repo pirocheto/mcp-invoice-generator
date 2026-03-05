@@ -5,18 +5,15 @@ description = "Invoice generator via MCP tools"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "babel>=2.18.0",
     "dynaconf>=3.2.12",
     "fastmcp>=3.0.1",
-    "jinja2>=3.1.6",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
+    "typst>=0.14.8",
     "uvicorn>=0.41.0",
-    "weasyprint>=68.1",
 ]
 
 [dependency-groups]
-cli = ["click>=8.3.1"]
 dev = [
     "ruff>=0.15.0",
     "ty>=0.0.15",
@@ -40,3 +37,4 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "src"
 module-root = ""
+package-data = { "my_package" = ["src/**/*.json"] }

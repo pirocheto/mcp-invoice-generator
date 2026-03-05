@@ -12,8 +12,5 @@ async def test_list_tools(mcp_client: Client):
     """Server should expose the expected tools."""
     tools = await mcp_client.list_tools()
     tool_names = {t.name for t in tools}
-    assert "get_issuers" in tool_names
-    assert "get_services" in tool_names
-    assert "get_clients" in tool_names
-    assert "get_templates" in tool_names
+    assert "get_default_values" in tool_names
     assert "generate_invoice" in tool_names
