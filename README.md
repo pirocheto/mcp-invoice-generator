@@ -140,15 +140,15 @@ The project includes a multi-stage Dockerfile optimised for production:
 
 - **Builder stage** — installs dependencies with `uv` using layer caching
 - **Runtime stage** — minimal `python:3.13-slim` image with only the virtual environment copied over
+- **Typst binary** copied from the official `ghcr.io/typst/typst` image
 - Runs as a **non-root user** (`nonroot`, uid 999)
-- Installs system font libraries (`libpango`, `libharfbuzz`, `libfontconfig`)
 - Exposes the MCP server via `uvicorn` on port `8000`
 
 ```bash
 # Build the image
 make build
 
-# Run the container (mounts data/ and outputs/, exposes port 8000)
+# Run the container (mounts data/, outputs/ and templates/, exposes port 8000)
 make start
 ```
 

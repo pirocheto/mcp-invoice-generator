@@ -28,4 +28,9 @@ run-inspector:
 	@echo "Run the FastMCP inspector to monitor server performance and logs."
 	bunx @modelcontextprotocol/inspector uv run fastmcp run dev.fastmcp.json
 
+.PHONY: typst
+typst:
+	@echo "Compile the Typst template to PDF."
+	typst compile templates/main.typ outputs/invoice.pdf
+
 
