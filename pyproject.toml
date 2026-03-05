@@ -37,4 +37,3 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "src"
 module-root = ""
-package-data = { "my_package" = ["src/**/*.json"] }
