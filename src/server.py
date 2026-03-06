@@ -57,8 +57,10 @@ def generate_invoice(data: MCPInputData) -> dict:
 
         # typst json data must be relative to the templates directory
         tmp_rel = Path(tmp_file.name).relative_to(templates_dir)
+        input_bytes = f'#import "invoice.typ": invoice; #show: invoice(..json("{tmp_rel}"))'.encode()
+
         typst.compile(
-            f'#import "invoice.typ": invoice\n#show: invoice(..json("{tmp_rel}"))'.encode(),
+            input=input_bytes,
             output=output_path,
             root=str(templates_dir),
         )
